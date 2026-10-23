@@ -10,12 +10,19 @@
 import { loadPlan, makeWorldToScreen } from "./plan.mjs";
 import { Framebuffer, lineBresenham } from "./raster.mjs";
 
-const val = (k, d) => {
-  const i = process.argv.indexOf(k);
-  return i >= 0 && process.argv[i + 1] ? +process.argv[i + 1] : d;
+const val = (keys, d) => {
+  const ks = Array.isArray(keys) ? keys : [keys];
+  for (const k of ks) {
+    const i = process.argv.indexOf(k);
+    if (i >= 0 && process.argv[i + 1] && !process.argv[i + 1].startsWith("-")) {
+      return process.argv[i + 1];
+    }
+  }
+  return d;
 };
-const W = val("--w", 800), H = val("--h", 600), ITERS = val("--iters", 20);
-const plan = loadPlan("pusaka_plan.json");
+const W = +val(["--w", "-w"], 800), H = +val(["--h", "-h"], 600), ITERS = +val(["--iters", "-i"], 20);
+const planPath = val(["--plan", "-p"], "pusaka_plan.json");
+const plan = loadPlan(planPath);
 
 // flatten the plan into screen-space segments at a given zoom
 function segmentsAtZoom(zoom) {

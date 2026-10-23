@@ -4,15 +4,20 @@
 import { loadPlan, renderPlan, newFramebufferForPlan } from "./plan.mjs";
 import { mkdirSync } from "node:fs";
 
-const val = (k, d) => {
-  const i = process.argv.indexOf(k);
-  return i >= 0 && process.argv[i + 1] && !process.argv[i + 1].startsWith("--")
-    ? process.argv[i + 1] : d;
+const val = (keys, d) => {
+  const ks = Array.isArray(keys) ? keys : [keys];
+  for (const k of ks) {
+    const i = process.argv.indexOf(k);
+    if (i >= 0 && process.argv[i + 1] && !process.argv[i + 1].startsWith("-")) {
+      return process.argv[i + 1];
+    }
+  }
+  return d;
 };
-const w = +val("--w", 800);
-const h = +val("--h", 600);
-const planPath = val("--plan", "pusaka_plan.json");
-const out = val("--out", "out/plan_scratch.ppm");
+const w = +val(["--w", "-w"], 800);
+const h = +val(["--h", "-h"], 600);
+const planPath = val(["--plan", "-p"], "pusaka_plan.json");
+const out = val(["--out", "-o"], "out/plan_scratch.ppm");
 const fill = process.argv.includes("--fill");
 
 mkdirSync("out", { recursive: true });
