@@ -127,32 +127,137 @@ function topLeftBias(xx, xy, yx, yy) {
  * Fill triangle A,B,C (each [x,y]) with rgb.
  * opts.topLeft (default true): apply the top-left rule.
  * opts.strictGreater (default false): use ">" instead of ">=" (the crack bug).
+ * opts.autoWinding (default false): automatically flip winding if edge(A,B,C) < 0.
  * opts.onFragment(x,y,wA,wB,wC): called per covered pixel (for coverage tests).
  */
 export function triangle(fb, A, B, C, rgb = [255, 255, 255], opts = {}) {
-  const { topLeft = true, strictGreater = false, onFragment = null } = opts;
+  const { topLeft = true, strictGreater = false, onFragment = null, autoWinding = false } = opts;
+  let pA = A, pB = B, pC = C;
+  if (autoWinding) {
+    const tot = edge(pA[0], pA[1], pB[0], pB[1], pC[0], pC[1]);
+    if (tot < 0) {
+      pB = C;
+      pC = B;
+    }
+  }
   const canDraw = !!(fb && typeof fb.set === "function");
   const W = fb ? fb.w : Infinity, H = fb ? fb.h : Infinity;
-  const minX = Math.max(0, Math.floor(Math.min(A[0], B[0], C[0])));
-  const maxX = Math.min(W - 1, Math.ceil(Math.max(A[0], B[0], C[0])));
-  const minY = Math.max(0, Math.floor(Math.min(A[1], B[1], C[1])));
-  const maxY = Math.min(H - 1, Math.ceil(Math.max(A[1], B[1], C[1])));
-  const bBC = topLeft ? topLeftBias(B[0], B[1], C[0], C[1]) : 0;
-  const bCA = topLeft ? topLeftBias(C[0], C[1], A[0], A[1]) : 0;
-  const bAB = topLeft ? topLeftBias(A[0], A[1], B[0], B[1]) : 0;
+  const minX = Math.max(0, Math.floor(Math.min(pA[0], pB[0], pC[0])));
+  const maxX = Math.min(W - 1, Math.ceil(Math.max(pA[0], pB[0], pC[0])));
+  const minY = Math.max(0, Math.floor(Math.min(pA[1], pB[1], pC[1])));
+  const maxY = Math.min(H - 1, Math.ceil(Math.max(pA[1], pB[1], pC[1])));
+  const bBC = topLeft ? topLeftBias(pB[0], pB[1], pC[0], pC[1]) : 0;
+  const bCA = topLeft ? topLeftBias(pC[0], pC[1], pA[0], pA[1]) : 0;
+  const bAB = topLeft ? topLeftBias(pA[0], pA[1], pB[0], pB[1]) : 0;
   const pass = strictGreater ? (v) => v > 0 : (v) => v >= 0;
   for (let y = minY; y <= maxY; y++) {
     for (let x = minX; x <= maxX; x++) {
       const px = x + 0.5, py = y + 0.5;                 // SAMPLE CENTRE
-      const wA = edge(B[0], B[1], C[0], C[1], px, py) + bBC;
-      const wB = edge(C[0], C[1], A[0], A[1], px, py) + bCA;
-      const wC = edge(A[0], A[1], B[0], B[1], px, py) + bAB;
+      const wA = edge(pB[0], pB[1], pC[0], pC[1], px, py) + bBC;
+      const wB = edge(pC[0], pC[1], pA[0], pA[1], px, py) + bCA;
+      const wC = edge(pA[0], pA[1], pB[0], pB[1], px, py) + bAB;
       if (pass(wA) && pass(wB) && pass(wC)) {
         if (canDraw) fb.set(x, y, rgb);
         if (onFragment) onFragment(x, y, wA, wB, wC);
       }
     }
   }
+}
+
+// ----------------------------------------------------------------- Wu line & color
+/** sRGB uint8 (0..255) -> Linear light float (0..1), matches Module 1 sRGB standard. */
+export function srgbToLinear(c) {
+  const v = c / 255;
+  return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+}
+
+/** Linear light float (0..1) -> sRGB uint8 (0..255). */
+export function linearToSrgb(v) {
+  const c = v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(Math.max(0, v), 1 / 2.4) - 0.055;
+  return Math.min(255, Math.max(0, Math.round(c * 255)));
+}
+
+/** Xiaolin Wu's anti-aliased line algorithm with linear-light blending (Module 1 color physics). */
+export function lineWu(x0, y0, x1, y1, fb = null, rgb = [255, 255, 255], opts = { linear: true }) {
+  const pts = [];
+  const plot = (x, y, alpha) => {
+    if (alpha <= 0) return;
+    alpha = Math.min(1, Math.max(0, alpha));
+    pts.push([x, y, alpha]);
+    if (!fb || !fb.inside(x, y)) return;
+    const bg = fb.get(x, y);
+    if (opts.linear) {
+      // Linear light blend: decode sRGB -> linear mix -> re-encode sRGB
+      const r = linearToSrgb(srgbToLinear(rgb[0]) * alpha + srgbToLinear(bg[0]) * (1 - alpha));
+      const g = linearToSrgb(srgbToLinear(rgb[1]) * alpha + srgbToLinear(bg[1]) * (1 - alpha));
+      const b = linearToSrgb(srgbToLinear(rgb[2]) * alpha + srgbToLinear(bg[2]) * (1 - alpha));
+      fb.set(x, y, [r, g, b]);
+    } else {
+      // Naive non-linear sRGB blend (dark fringe / energy loss artifact)
+      const r = Math.round(rgb[0] * alpha + bg[0] * (1 - alpha));
+      const g = Math.round(rgb[1] * alpha + bg[1] * (1 - alpha));
+      const b = Math.round(rgb[2] * alpha + bg[2] * (1 - alpha));
+      fb.set(x, y, [r, g, b]);
+    }
+  };
+
+  let steep = Math.abs(y1 - y0) > Math.abs(x1 - x0);
+  let [ax0, ay0, ax1, ay1] = [x0, y0, x1, y1];
+  if (steep) {
+    [ax0, ay0] = [ay0, ax0];
+    [ax1, ay1] = [ay1, ax1];
+  }
+  if (ax0 > ax1) {
+    [ax0, ax1] = [ax1, ax0];
+    [ay0, ay1] = [ay1, ay0];
+  }
+
+  const dx = ax1 - ax0, dy = ay1 - ay0;
+  const gradient = dx === 0 ? 1 : dy / dx;
+
+  // endpoint 1
+  let xend = Math.round(ax0);
+  let yend = ay0 + gradient * (xend - ax0);
+  let xgap = 1 - ((ax0 + 0.5) % 1);
+  const xpxl1 = xend;
+  const ypxl1 = Math.floor(yend);
+  if (steep) {
+    plot(ypxl1, xpxl1, (1 - (yend % 1)) * xgap);
+    plot(ypxl1 + 1, xpxl1, (yend % 1) * xgap);
+  } else {
+    plot(xpxl1, ypxl1, (1 - (yend % 1)) * xgap);
+    plot(xpxl1, ypxl1 + 1, (yend % 1) * xgap);
+  }
+  let intery = yend + gradient;
+
+  // endpoint 2
+  xend = Math.round(ax1);
+  yend = ay1 + gradient * (xend - ax1);
+  xgap = (ax1 + 0.5) % 1;
+  const xpxl2 = xend;
+  const ypxl2 = Math.floor(yend);
+  if (steep) {
+    plot(ypxl2, xpxl2, (1 - (yend % 1)) * xgap);
+    plot(ypxl2 + 1, xpxl2, (yend % 1) * xgap);
+  } else {
+    plot(xpxl2, ypxl2, (1 - (yend % 1)) * xgap);
+    plot(xpxl2, ypxl2 + 1, (yend % 1) * xgap);
+  }
+
+  // main line loop
+  for (let x = xpxl1 + 1; x < xpxl2; x++) {
+    const y = Math.floor(intery);
+    const f = intery - y;
+    if (steep) {
+      plot(y, x, 1 - f);
+      plot(y + 1, x, f);
+    } else {
+      plot(x, y, 1 - f);
+      plot(x, y + 1, f);
+    }
+    intery += gradient;
+  }
+  return pts;
 }
 
 /** Barycentric coords of P in triangle A,B,C (unbiased). Sum to 1. */

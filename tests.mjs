@@ -2,7 +2,7 @@
  * Exit 0 iff all pass. Covers the hand-checkable invariants of Examples
  * E1-E5, watertightness (top-left rule), and the reference raster match. */
 import {
-  Framebuffer, lineDDA, lineBresenham, edge, triangle, barycentric, coverage,
+  Framebuffer, lineDDA, lineBresenham, lineWu, edge, triangle, barycentric, coverage,
 } from "./raster.mjs";
 import { makeWorldToScreen, loadPlan } from "./plan.mjs";
 import { pixelStats } from "./metrics.mjs";
@@ -147,6 +147,33 @@ check("asterisk -- 24 radii every 15 deg: each ray length equals R within +-1 px
     const dist = Math.hypot(last[0] - cx, last[1] - cy);
     assert(Math.abs(dist - R) <= 1.0, `ray ${deg}° dist ${dist} deviates from R=${R} by > 1px`);
   }
+});
+
+check("pitfall -- autoWinding: CW and CCW vertex ordering rasterise identically", () => {
+  const fb1 = new Framebuffer(10, 10);
+  const fb2 = new Framebuffer(10, 10);
+  const A = [1, 1], B = [6, 2], C = [3, 7];
+  // Normal winding (edge total > 0)
+  triangle(fb1, A, B, C, [200, 100, 50], { autoWinding: true, topLeft: true });
+  // Reversed winding (edge total < 0, normally discarded without autoWinding)
+  triangle(fb2, A, C, B, [200, 100, 50], { autoWinding: true, topLeft: true });
+  const st = pixelStats(fb1, fb2);
+  assert(st.identical === st.total && st.maxAbs === 0,
+    `autoWinding mismatch: identical ${st.identical}/${st.total}, maxAbs ${st.maxAbs}`);
+});
+
+check("pitfall -- lineWu: draws anti-aliased line with valid linear-light blending", () => {
+  const fb = new Framebuffer(20, 20, [0, 0, 0]);
+  const pts = lineWu(2, 2, 17, 8, fb, [255, 255, 255], { linear: true });
+  assert(pts.length > 0, "lineWu returned no points");
+  // Check that endpoints and fractional interior pixels are drawn
+  let litCount = 0;
+  for (let y = 0; y < 20; y++) {
+    for (let x = 0; x < 20; x++) {
+      if (fb.get(x, y)[0] > 0) litCount++;
+    }
+  }
+  assert(litCount >= pts.length / 2, `litCount ${litCount} too low for Wu line`);
 });
 
 console.log(`\n${fail === 0 ? "ALL CHECKS PASSED" : fail + " CHECK(S) FAILED"}  (${pass} ok, ${fail} fail)`);
