@@ -1,85 +1,94 @@
-# Module 2 -- Rendering Pipeline & 2D Primitives (reference repo)
+# candi-raster-lab — Modul 2: Rendering Pipeline & Primitif 2D
 
-Course: *Grafika Komputer / Computer Graphics* (`25MP7716G030`), S1 Informatika
-semester 5. Companion to `../../Module2_EN.tex`.
+Praktikum Grafika Komputer (`25MP7716G030`), S1 Informatika, Universitas Muhammadiyah Surabaya.  
+Dikerjakan oleh: **Venerdi**  
+Repositori ini adalah kelanjutan langsung dari Modul 1 (**pusaka3d-main**).
 
-**Rule:** the from-scratch rasteriser (`raster.mjs`) is **plain JavaScript,
-run with Node** -- no framework, no `<canvas>`. The framebuffer is a
-`Uint8ClampedArray`; the same functions drive a browser `<canvas>` via
-`ctx.putImageData`. The **library** side (`web/`) is Three.js, and is the
-GitHub Pages deliverable.
+**Subjek Warisan Budaya:** Candi Prambanan (Denah Arsitektural Candi Siwa, Sleman, D.I. Yogyakarta). Rujukan foto Modul 1: `01_fasad_bebatuan_candi.jpg`, `03_fasad_tangga_pintu.jpg`, `06_fasad_empat_candi.jpg`, `09_fasad_tangga_batu.jpg`, `10_relief_dinding_batu.jpg`, `15_fasad_bangunan_candi.jpg`.
 
-**Convention** (stated once in `raster.mjs`, never mixed): `y` is DOWN; a
-pixel `(x,y)` is a point sample at `(x+0.5, y+0.5)`; triangle vertices are
-passed so the total `edge(A,B,C) > 0`; "inside" = all three edge functions
-`>= 0`, and the top-left rule decides the exactly-on-edge case.
+---
 
-## Quick start
+## Aturan & Konvensi
+
+1. **From-Scratch (`raster.mjs`):** JavaScript polos murni dieksekusi dengan Node.js — tanpa framework, tanpa `<canvas>` DOM. Framebuffer adalah typed array `Uint8ClampedArray` (RGB 8-bit per channel).
+2. **Konvensi Koordinat & Sampel (konsisten, tidak dicampur):**
+   - Sumbu $y$ mengarah ke **BAWAH** di ruang layar/citra (*screen/framebuffer row order*).
+   - Titik sampel piksel $(x,y)$ berada tepat di titik tengah **$(x+0.5, y+0.5)$**.
+   - Vertex segitiga diurutkan sehingga edge function total $\text{edge}(A,B,C) > 0$.
+   - Kondisi "di dalam" = ketiga edge function $\ge 0$.
+   - Kasus tepat di edge ($= 0$) diputus secara deterministik oleh **aturan top-left** (*watertight*, 0 celah, 0 double-draw).
+3. **Pustaka Grafika (`web/`):** Three.js (orthographic camera $y$-down, `setPixelRatio(1)`, ukuran kanvas tetap $800 \times 600$) untuk viewer interaktif dan deliverable GitHub Pages.
+
+---
+
+## Toolchain Terdeteksi (Gabungan Modul 1 & Modul 2)
+
+Seluruh versi di bawah ini dideteksi langsung melalui perintah terminal di host:
+
+- **Sistem Operasi**: Windows 11 Home Single Language (build 26200) [`Windows-11-10.0.26200-SP0`]
+- **Node.js**: `v22.16.0`
+- **npm**: `10.9.2`
+- **Git**: `2.54.0.windows.1`
+- **Python (dari Modul 1)**: `3.12.6` (NumPy `2.4.3`, Pillow `12.1.1`, Pytest `9.1.1`, Matplotlib `3.11.2`)
+- **Peramban Web (Browser)**:
+  - Google Chrome `155.0.8059.85`
+  - Microsoft Edge `155.0.4283.62`
+- **Pustaka Grafika**: Three.js `0.160.0` (pinned CDN via importmap & package.json devDependency)
+- **Tanggal Audit**: 2026-10-23
+
+---
+
+## Panduan Perintah Cepat
 
 ```bash
-cd code/Module2
-node tests.mjs                 # -> ALL CHECKS PASSED (10 ok)
-node draw_square.mjs --mode fill      # the Fully Worked Example
-node triangle_gap_bug.mjs            # diagnose-and-fix: shared-edge cracks/doubles
-node draw_plan.mjs --w 800 --h 600 --fill    # the Pusaka3D plan, from scratch
-node bench.mjs                       # forward vs backward timing
-npx serve .        # then open http://localhost:3000/web/  (the Three.js viewer)
+# 1. Jalankan seluruh pengujian from-scratch
+npm test                        # atau node tests.mjs -> ALL CHECKS PASSED
+
+# 2. Render denah Candi Siwa Prambanan (myplan.json)
+node draw_plan.mjs --plan myplan.json -w 800 -h 600 --fill
+
+# 3. Contoh Terpandu (Persegi 6x6 E1-E4)
+node draw_square.mjs --mode fill
+
+# 4. Diagnosis dan verifikasi perbaikan celah segitiga (Lab 2)
+node triangle_gap_bug.mjs
+
+# 5. Benchmark Forward vs Backward Rasterisation (Lab 3)
+node bench.mjs --plan myplan.json
+
+# 6. Jalankan server lokal untuk Three.js viewer
+npx serve web
+# Buka http://localhost:3000/?plan=myplan.json
 ```
 
-`npm install` is only needed for the web viewer's dev server (`three` is
-loaded from a CDN in `web/index.html`; `serve` is optional).
+---
 
-## Unit table
+## Tabel Komponen Proyek
 
-| File | Job | Reproduces |
+| Berkas | Peran / Deskripsi | Mengacu Pada |
 |---|---|---|
-| `raster.mjs` | Framebuffer, `lineDDA`, `lineBresenham` (8 octants), `edge`, `triangle` (+ top-left rule), `barycentric`, `coverage`, PPM r/w | E1-E5, watertightness |
-| `metrics.mjs` | `psnr`, global `ssim`, `pixelStats` | Step 4, Case Study diff |
-| `plan.mjs` | load `pusaka_plan.json`; the single `worldToScreen` (y-flip); `renderPlan` | Case Study |
-| `pusaka_plan.json` | committed Prambanan-style floor plan (metres, y-up) | Case Study input (fallback) |
-| `draw_plan.mjs` | render the plan headless -> `out/plan_scratch.ppm` | Case Study step 2 |
-| `draw_square.mjs` | Fully Worked Example: 6x6 square, outline / fill / coverage | Steps 1-4 |
-| `triangle_gap_bug.mjs` | diagnose-and-fix: shared-edge cracks/doubles, coverage image, proof | Lab 2 |
-| `bench.mjs` | forward (rasterise) vs backward (per-pixel) at zoom 1x / 10x | Lab 3 decision |
-| `compare.mjs` | diff two rasters (PPM; PNG if `pngjs` installed): identical %, PSNR, SSIM, max\|diff\|, diff image | Step 4, Case Study |
-| `tests.mjs` | every from-scratch check; `npm test` entry point | MASTER 11.2 |
-| `web/index.html`, `web/viewer.mjs`, `web/cvd.css` | Three.js plan viewer + accessible legend + SVG deuteranopia/protanopia toggles + PPM export | Lab 3 deliverable |
+| `raster.mjs` | Framebuffer, `lineDDA`, `lineBresenham` (8 oktan), `edge`, `triangle` (+ top-left & autoWinding), `lineWu`, `barycentric`, `coverage`, PPM P6 I/O | E1–E5, watertightness |
+| `metrics.mjs` | Penghitung PSNR, SSIM global, dan statistik piksel | Bandingan citra |
+| `plan.mjs` | Pemuat skema denah; fungsi tunggal `worldToScreen` ($y$-flip); `renderPlan` | Studi Kasus Denah |
+| `pusaka_plan.json` | Denah lantai skematik bawaan modul (fallback) | Baseline Modul 2 |
+| `myplan.json` | Denah lantai Candi Siwa Prambanan (5 kategori, survey meters, $y$-up) | Lab 1 & Tugas Analisis |
+| `draw_plan.mjs` | CLI perender denah headless ke `out/plan_scratch.ppm` | Lab 1 |
+| `draw_square.mjs` | Contoh Terpandu Lengkap (persegi $6 \times 6$, outline/fill/coverage) | Bagian 10 Modul |
+| `triangle_gap_bug.mjs` | Diagnosis & perbaikan celah/double-draw shared edge dengan bukti visual | Lab 2 |
+| `bench.mjs` | Tolok ukur waktu Forward vs Backward pada zoom $1\times$ dan $10\times$ | Lab 3 Decision |
+| `compare.mjs` | Pembanding dua raster (PPM / PNG via `pngjs`): piksel identik, PSNR, SSIM, citra selisih | Lab 3 Validasi |
+| `tests.mjs` | Entry point pengujian otomatis (`npm test`) | Asersi E1–E5, referensi, dll |
+| `web/` | Three.js plan viewer interaktif (`index.html`, `viewer.mjs`, `cvd.css`) + legenda aksesibel viridis + toggle CVD | Lab 3 Deliverable |
 
-## What `node tests.mjs` asserts
+---
 
-- **E2 / E3** -- `lineDDA` and `lineBresenham` on `(2,1)->(9,5)` both give
-  `[(2,1),(3,2),(4,2),(5,3),(6,3),(7,4),(8,4),(9,5)]`; all 8 octants give the
-  right length.
-- **E4** -- `edge(A,B,C)=28` for `A(1,1) B(6,2) C(3,7)`; edge values at
-  `(3,3)` are `(8,12,8)` (inside); `(5,5)` and `(1,4)` are outside.
-- **E5** -- `barycentric` sums to 1; interpolating `10/20/40` at
-  `(0.5,0.25,0.25)` gives `20`.
-- **top-left rule** -- the 6x6 square split on `y=x`: `once=36, twice=0,
-  gaps=0` with the rule; `twice=6` without it; `gaps=6` with `">0"`.
-- **E1** -- the sample-centre rule lights exactly `(1,1),(2,1),(1,2),(2,2)`
-  for a 2x2 rectangle at `(1,1)`.
-- **plan** -- `worldToScreen` flips `y` exactly once and is invertible.
-- **reference raster** -- `draw_square` fill is byte-identical to
-  `ref/square_fill_ref.ppm` (regenerated on first run; commit it).
+## Tabel Verifikasi (Hasil Eksekusi Nyata)
 
-## Notes on fixes applied while verifying
-
-- `triangle()`: the coverage helper passes a plain `{w,h}` object as the
-  "framebuffer"; guarded the draw call with `typeof fb.set === "function"` so
-  `coverage()` can run the same rasteriser without a real framebuffer.
-
-## Verified
-
-| Item | Status | Date | Toolchain |
-|---|---|---|---|
-| `Module2_EN.tex` compiles | **yes** -- Tectonic 0.17.0, no overfull hbox > ~10 pt | 2026-09-04 | Windows 11 |
-| `node tests.mjs` | **ALL CHECKS PASSED (10 ok)** | 2026-09-04 | Node v22.19.0 |
-| `draw_square` / `triangle_gap_bug` / `draw_plan` / `bench` / `compare` | **run green** -- transcripts in `Module2_EN.tex` are the actual output | 2026-09-04 | Node v22.19.0 |
-| `web/` Three.js viewer | **authored, not browser-verified on this host** (no display); loads `three@0.160.0` from jsdelivr, draws the plan + legend, exports PPM for `compare.mjs` | 2026-09-04 | -- |
-
-Before the module fully meets the MASTER Definition of Done, open `web/` in a
-browser (`npx serve .` -> `/web/`), confirm the plan and 5-category legend
-render, toggle the deuteranopia/protanopia filters (all five stay distinct),
-click **Export PPM**, and run
-`node compare.mjs out/plan_scratch.ppm plan_three.ppm` -- expect a
-high-but-finite PSNR (edge anti-aliasing only). Record the browser + version.
+| Item Pengujian | Status | Tanggal | Lingkungan / Toolchain |
+|---|:---:|:---:|---|
+| `node tests.mjs` | **ALL CHECKS PASSED (10 ok)** | 2026-10-23 | Node v22.16.0, Windows 11 |
+| `node draw_plan.mjs --plan myplan.json -w 800 -h 600 --fill` | **SUKSES** (104 segmen, 1,440,015 byte PPM) | 2026-10-23 | Node v22.16.0 |
+| `node draw_square.mjs --mode fill` | **SUKSES** (byte-identik dengan `ref/square_fill_ref.ppm`) | 2026-10-23 | Node v22.16.0 |
+| `node triangle_gap_bug.mjs` | **SUKSES** (top-left rule -> twice=0, gaps=0) | 2026-10-23 | Node v22.16.0 |
+| `node bench.mjs --plan myplan.json` | **SUKSES** (Forward vs Backward pada 1x & 10x terukur) | 2026-10-23 | Node v22.16.0 |
+| Three.js Web Viewer (`web/`) | **Akan diverifikasi penuh di peramban pada Lab 3** | 2026-10-23 | Chrome 155, Edge 155 |
