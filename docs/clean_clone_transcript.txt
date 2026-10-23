@@ -1,0 +1,55 @@
+======================================================================
+TRANSKRIP REPRODUKSI DARI BERSIH (CLEAN CLONE REPRODUCTION TRANSCRIPT)
+Repositori: candi-raster-lab (Modul 2 Praktikum Grafika Komputer)
+Host      : Windows 11 Home Single Language (build 26200), Node v22.16.0, npm 10.9.2, git 2.54.0
+Tanggal   : 2026-10-23
+======================================================================
+
+Langkah 1: Clone baru ke direktori temporer terisolasi
+----------------------------------------------------------------------
+PS > $tempDir = Join-Path $env:TEMP ("clean_clone_" + [Guid]::NewGuid().ToString().Substring(0,8))
+PS > git clone "https://github.com/vlahadiqa/candi-raster-lab.git" $tempDir
+Cloning into 'C:\Users\ADVANW~1\AppData\Local\Temp\clean_clone_fe8b120b'...
+done.
+PS > cd $tempDir
+
+Langkah 2: Instalasi dependensi (hanya Three.js, serve, pngjs di devDependencies)
+----------------------------------------------------------------------
+PS > npm install
+
+added 87 packages, and audited 88 packages in 15s
+
+26 packages are looking for funding
+  run `npm fund` for details
+
+Langkah 3: Eksekusi seluruh rangkaian pengujian unit from-scratch
+----------------------------------------------------------------------
+PS > npm test
+
+> grk-module2@1.0.0 test
+> node tests.mjs
+
+OK   E2 -- lineDDA (2,1)->(9,5) gives the 8-pixel staircase
+OK   E3 -- lineBresenham (2,1)->(9,5) matches DDA, integers only
+OK   lines -- all 8 octants: the reflected segment has the same length
+OK   E4 -- edge-function signs for A(1,1) B(6,2) C(3,7)
+OK   E5 -- barycentric interpolation 10/20/40 at (.5,.25,.25) = 20
+OK   top-left rule -- 6x6 square split on y=x: every pixel covered once
+OK   no top-left rule -- same square shows the seam (>=0: doubles; >0: gaps)
+OK   E1 -- sample-centre: a 2x2 rect at (1,1) lights exactly (1,1),(2,1),(1,2),(2,2)
+OK   plan -- worldToScreen flips y once and is invertible on a known point
+OK   reference raster -- draw_square fill is byte-identical to ref/square_fill_ref.ppm
+OK   reference raster -- triangle E4 is byte-identical to ref/tri_ref.ppm
+OK   asterisk -- 24 radii every 15 deg: each ray length equals R within +-1 px
+OK   pitfall -- autoWinding: CW and CCW vertex ordering rasterise identically
+OK   pitfall -- lineWu: draws anti-aliased line with valid linear-light blending
+
+ALL CHECKS PASSED  (14 ok, 0 fail)
+
+Langkah 4: Menjalankan dev server web viewer
+----------------------------------------------------------------------
+PS > npx serve web
+Accepting connections at http://localhost:3000
+
+STATUS: 100% REPRODUCIBLE FROM CLEAN CLONE TANPA INTERVENSI MANUAL.
+URL Publikasi GitHub Pages: https://vlahadiqa.github.io/candi-raster-lab/
