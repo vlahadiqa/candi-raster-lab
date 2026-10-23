@@ -99,15 +99,42 @@ function exportPPM() {
   a.click();
 }
 
+// PNG export via canvas.toDataURL
+function exportPNG() {
+  renderer.render(scene, camera);
+  const dataUrl = canvas.toDataURL("image/png");
+  const a = document.createElement("a");
+  a.href = dataUrl;
+  a.download = "plan_three.png";
+  a.click();
+}
+
 function applyFilters() {
   const wrap = document.getElementById("wrap");
   wrap.classList.toggle("cvd-deuteranopia", document.getElementById("cvd").checked);
   wrap.classList.toggle("cvd-protanopia", document.getElementById("cvd2").checked);
 }
 
-const PLAN_URL = "../pusaka_plan.json";
-fetch(PLAN_URL)
-  .then((r) => r.json())
+// Support loading custom plan via query param ?plan=myplan.json (default pusaka_plan.json)
+const params = new URLSearchParams(window.location.search);
+const planFile = params.get("plan") || "pusaka_plan.json";
+// Try same directory first, then parent directory (for npx serve . -> /web/)
+const candidateUrls = [planFile, `../${planFile}`];
+
+async function fetchPlan() {
+  let lastErr = null;
+  for (const url of candidateUrls) {
+    try {
+      const r = await fetch(url);
+      if (r.ok) return await r.json();
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr || new Error(`Failed to load ${planFile}`);
+}
+
+fetchPlan()
   .then((p) => {
     plan = p;
     world2screen = makeWorldToScreen(plan);
@@ -117,10 +144,11 @@ fetch(PLAN_URL)
     document.getElementById("cvd").addEventListener("change", applyFilters);
     document.getElementById("cvd2").addEventListener("change", applyFilters);
     document.getElementById("export").addEventListener("click", exportPPM);
+    document.getElementById("export-png")?.addEventListener("click", exportPNG);
   })
   .catch((err) => {
     document.getElementById("view").insertAdjacentHTML(
       "beforeend",
-      `<p style="color:#f66">Could not load ${PLAN_URL}: ${err}. Serve the repo root, e.g. <code>npx serve .</code>, and open <code>/web/</code>.</p>`
+      `<p style="color:#f66">Could not load ${planFile}: ${err}. Serve repo root or web/ directory.</p>`
     );
   });
