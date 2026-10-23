@@ -119,5 +119,21 @@ check("reference raster -- draw_square fill is byte-identical to ref/square_fill
     `identical ${st.identical}/${st.total}, max|diff| ${st.maxAbs}`);
 });
 
+check("reference raster -- triangle E4 is byte-identical to ref/tri_ref.ppm", () => {
+  if (!existsSync("ref/tri_ref.ppm")) {
+    console.log("     (tri_ref missing -- generating it now)");
+    mkdirSync("ref", { recursive: true });
+    const g = new Framebuffer(10, 10);
+    triangle(g, [1, 1], [6, 2], [3, 7], [230, 120, 40], { topLeft: true });
+    g.writePPM("ref/tri_ref.ppm");
+  }
+  const fb = new Framebuffer(10, 10);
+  triangle(fb, [1, 1], [6, 2], [3, 7], [230, 120, 40], { topLeft: true });
+  const ref = Framebuffer.readPPM("ref/tri_ref.ppm");
+  const st = pixelStats(fb, ref);
+  assert(st.identical === st.total && st.maxAbs === 0,
+    `identical ${st.identical}/${st.total}, max|diff| ${st.maxAbs}`);
+});
+
 console.log(`\n${fail === 0 ? "ALL CHECKS PASSED" : fail + " CHECK(S) FAILED"}  (${pass} ok, ${fail} fail)`);
 process.exit(fail === 0 ? 0 : 1);
