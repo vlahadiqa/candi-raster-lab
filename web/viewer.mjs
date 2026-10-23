@@ -50,7 +50,7 @@ function build(fillSilhouette) {
       i === 0 ? shape.moveTo(x, y) : shape.lineTo(x, y);
     });
     const geo = new THREE.ShapeGeometry(shape);
-    const mat = new THREE.MeshBasicMaterial({ color: 0xe6ecf5 });
+    const mat = new THREE.MeshBasicMaterial({ color: 0xe6ecf5, side: THREE.DoubleSide });
     group.add(new THREE.Mesh(geo, mat));
   }
 
@@ -143,8 +143,24 @@ fetchPlan()
     document.getElementById("fill").addEventListener("change", (e) => build(e.target.checked));
     document.getElementById("cvd").addEventListener("change", applyFilters);
     document.getElementById("cvd2").addEventListener("change", applyFilters);
+    if (params.get("cvd") === "deuteranopia") {
+      document.getElementById("cvd").checked = true;
+      applyFilters();
+    } else if (params.get("cvd") === "protanopia") {
+      document.getElementById("cvd2").checked = true;
+      applyFilters();
+    }
     document.getElementById("export").addEventListener("click", exportPPM);
     document.getElementById("export-png")?.addEventListener("click", exportPNG);
+    if (params.get("autoupload") === "true") {
+      setTimeout(() => {
+        renderer.render(scene, camera);
+        const dataUrl = canvas.toDataURL("image/png");
+        fetch("/upload_plan_three", { method: "POST", body: dataUrl })
+          .then(() => console.log("Uploaded plan_three"))
+          .catch(console.error);
+      }, 600);
+    }
   })
   .catch((err) => {
     document.getElementById("view").insertAdjacentHTML(
