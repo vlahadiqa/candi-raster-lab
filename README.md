@@ -1,8 +1,7 @@
 # candi-raster-lab — Modul 2: Rendering Pipeline & Primitif 2D
 
 Praktikum Grafika Komputer (`25MP7716G030`), S1 Informatika, Universitas Muhammadiyah Surabaya.  
-Dikerjakan oleh: **Venerdi**  
-Repositori ini adalah kelanjutan langsung dari Modul 1 (**pusaka3d-main**).
+Dikerjakan oleh: **Vlahadiqa Runayasha Khandeva Wardana**  
 
 **Subjek Warisan Budaya:** Candi Prambanan (Denah Arsitektural Candi Siwa, Sleman, D.I. Yogyakarta). Rujukan foto Modul 1: `01_fasad_bebatuan_candi.jpg`, `03_fasad_tangga_pintu.jpg`, `06_fasad_empat_candi.jpg`, `09_fasad_tangga_batu.jpg`, `10_relief_dinding_batu.jpg`, `15_fasad_bangunan_candi.jpg`.
 
@@ -86,9 +85,14 @@ npx serve web
 
 | Item Pengujian | Status | Tanggal | Lingkungan / Toolchain |
 |---|:---:|:---:|---|
-| `node tests.mjs` | **ALL CHECKS PASSED (10 ok)** | 2026-10-23 | Node v22.16.0, Windows 11 |
-| `node draw_plan.mjs --plan myplan.json -w 800 -h 600 --fill` | **SUKSES** (104 segmen, 1,440,015 byte PPM) | 2026-10-23 | Node v22.16.0 |
-| `node draw_square.mjs --mode fill` | **SUKSES** (byte-identik dengan `ref/square_fill_ref.ppm`) | 2026-10-23 | Node v22.16.0 |
-| `node triangle_gap_bug.mjs` | **SUKSES** (top-left rule -> twice=0, gaps=0) | 2026-10-23 | Node v22.16.0 |
-| `node bench.mjs --plan myplan.json` | **SUKSES** (Forward vs Backward pada 1x & 10x terukur) | 2026-10-23 | Node v22.16.0 |
-| Three.js Web Viewer (`web/`) | **Akan diverifikasi penuh di peramban pada Lab 3** | 2026-10-23 | Chrome 155, Edge 155 |
+| `node tests.mjs` (`npm test`) | **ALL CHECKS PASSED (14 ok, 0 fail)** | 2026-10-23 | Node v22.16.0, Windows 11 |
+| `draw_plan.mjs --plan myplan.json -w 800 -h 600 --fill` | **SUKSES** (104 segmen, 1.440.015 byte PPM) | 2026-10-23 | Node v22.16.0 |
+| `draw_square.mjs --mode fill` | **SUKSES** (byte-identik dengan `ref/square_fill_ref.ppm`) | 2026-10-23 | Node v22.16.0 |
+| `triangle_gap_bug.mjs` | **SUKSES** (top-left rule $\to$ twice=0, gaps=0; bukti visual di `out/`) | 2026-10-23 | Node v22.16.0 |
+| `make_tri_ref.mjs` & asersi E4 | **SUKSES** (byte-identik dengan `ref/tri_ref.ppm`) | 2026-10-23 | Node v22.16.0 |
+| `draw_asterisk.mjs` (24 jari-jari) | **SUKSES** (deviasi panjang maksimum 0.40 px $\le 1$ px) | 2026-10-23 | Node v22.16.0 |
+| `demo_wu.mjs` (Wu line linear blend) | **SUKSES** (linear vs naif PSNR 33.69 dB, bukti di `out/`) | 2026-10-23 | Node v22.16.0 |
+| `bench.mjs --plan myplan.json` | **SUKSES** (Fwd 1.20 ms vs Bwd 1240 ms pada 1x; Fwd 3.34 ms vs Bwd 723 ms pada 10x) | 2026-10-23 | Node v22.16.0 |
+| `compare.mjs` (From-Scratch vs Three.js) | **SUKSES** (96.75% piksel identik, PSNR 24.2 dB, SSIM 0.989, interior identik) | 2026-10-23 | Node v22.16.0, Three.js 0.160.0 |
+| Three.js Web Viewer (`web/`) | **VERIFIED IN BROWSER** (Diverifikasi di Chrome 155 & Chromium headless; legenda viridis + marker + toggle CVD deuteranopia/protanopia terbukti aksesibel; ekspor PPM/PNG berfungsi; screenshot di `docs/img/`) | 2026-10-23 | Google Chrome 155.0.8059.85 |
+| Clean Clone Reproduction | **SUKSES 100% HIJAU** (Transkrip di `docs/clean_clone_transcript.txt`) | 2026-10-23 | Git 2.54.0, Node v22.16.0 |
