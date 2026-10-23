@@ -18,7 +18,10 @@ yarn-error.log*
 Module2_ID.pdf
 module2_pdf_text.txt
 *.pdf
-docs/
+
+# Personal study notes (kept ignored)
+docs/viva_cheatsheet.md
+docs/pra_modul_outline.md
 
 # Python artifacts (from analysis / test scripts)
 __pycache__/
