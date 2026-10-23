@@ -13,7 +13,8 @@
     "serve": "npx --yes serve web"
   },
   "devDependencies": {
-    "three": ">=0.160.0",
-    "serve": ">=14.0.0"
+    "pngjs": "^7.0.0",
+    "serve": ">=14.0.0",
+    "three": ">=0.160.0"
   }
 }

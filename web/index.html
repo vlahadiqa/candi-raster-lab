@@ -62,7 +62,10 @@
     <label class="toggle"><input type="checkbox" id="cvd" /> Simulate deuteranopia</label>
     <label class="toggle"><input type="checkbox" id="cvd2" /> Simulate protanopia</label>
     <label class="toggle"><input type="checkbox" id="fill" checked /> Fill silhouette</label>
-    <button id="export">Export PPM</button>
+    <div style="display:flex; gap:0.5rem; margin-top:0.6rem;">
+      <button id="export">Export PPM</button>
+      <button id="export-png">Export PNG</button>
+    </div>
     <p class="hint">The legend uses a <b>viridis</b> ramp (luminance varies), a
       <b>label</b>, and a distinct <b>marker shape</b> per category &mdash; so all
       five stay distinguishable under the CVD filters and in grayscale.</p>
