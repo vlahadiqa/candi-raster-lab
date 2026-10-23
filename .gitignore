@@ -1,0 +1,9 @@
+node_modules/
+out/
+*.log
+plan_three.ppm
+
+Module2_ID.pdf
+module2_pdf_text.txt
+*.pdf
+
