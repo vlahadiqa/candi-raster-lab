@@ -135,5 +135,19 @@ check("reference raster -- triangle E4 is byte-identical to ref/tri_ref.ppm", ()
     `identical ${st.identical}/${st.total}, max|diff| ${st.maxAbs}`);
 });
 
+check("asterisk -- 24 radii every 15 deg: each ray length equals R within +-1 px", () => {
+  const cx = 50, cy = 50, R = 40;
+  for (let k = 0; k < 24; k++) {
+    const deg = k * 15;
+    const rad = deg * Math.PI / 180;
+    const x1 = Math.round(cx + R * Math.cos(rad));
+    const y1 = Math.round(cy + R * Math.sin(rad));
+    const pts = lineBresenham(cx, cy, x1, y1);
+    const last = pts[pts.length - 1];
+    const dist = Math.hypot(last[0] - cx, last[1] - cy);
+    assert(Math.abs(dist - R) <= 1.0, `ray ${deg}° dist ${dist} deviates from R=${R} by > 1px`);
+  }
+});
+
 console.log(`\n${fail === 0 ? "ALL CHECKS PASSED" : fail + " CHECK(S) FAILED"}  (${pass} ok, ${fail} fail)`);
 process.exit(fail === 0 ? 0 : 1);
