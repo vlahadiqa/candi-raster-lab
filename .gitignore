@@ -18,6 +18,7 @@ yarn-error.log*
 Module2_ID.pdf
 module2_pdf_text.txt
 *.pdf
+docs/
 
 # Python artifacts (from analysis / test scripts)
 __pycache__/
