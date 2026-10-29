@@ -19,9 +19,15 @@ Module2_ID.pdf
 module2_pdf_text.txt
 *.pdf
 
-# Personal study notes (kept ignored)
-docs/viva_cheatsheet.md
+# Personal study notes & local report documents (kept ignored)
+docs/laporan.md
+docs/lab1_pipeline.md
+docs/lab3_decision.md
 docs/pra_modul_outline.md
+docs/viva_cheatsheet.md
+
+# Image deliverables folder (tracked)
+!gambar/
 
 # Python artifacts (from analysis / test scripts)
 __pycache__/
