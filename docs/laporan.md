@@ -2,7 +2,7 @@
 
 **Praktikum Grafika Komputer (`25MP7716G030`)**  
 **Program Studi S1 Informatika, Universitas Muhammadiyah Surabaya**  
-**Mahasiswa:** Venerdi  
+**Mahasiswa:** Vlahadiqa Runayasha Khandeva Wardana  
 **Repositori:** `candi-raster-lab` (Kelanjutan Langsung dari Modul 1: `pusaka3d-main`)  
 **Subjek Warisan Budaya:** Kompleks Candi Prambanan (Denah Arsitektural Candi Siwa, Sleman, D.I. Yogyakarta)  
 **URL GitHub Pages:** [https://vlahadiqa.github.io/candi-raster-lab/](https://vlahadiqa.github.io/candi-raster-lab/)
@@ -46,7 +46,7 @@ Dipilih segmen dinding luar selatan: $P_0(16.0, 2.0)\text{ m} \to P_1(28.0, 2.0)
 4. **Rasterisation (Scan Conversion)**: `lineBresenham` mengevaluasi langkah integer dari $x = 315$ ke $483$ pada $y = 537$, menghasilkan 169 fragment pada titik tengah piksel $(x+0.5, 537.5)$.
 5. **Fragment Shading**: Flat shading mengatribusikan warna ungu viridis $[68, 1, 84]$ ke setiap fragment.
 6. **Per-Fragment Operations**: Uji bounds memori berhasil; tidak ada depth/alpha blend yang memblokir penulisan.
-7. **Framebuffer**: Nilai byte warna ditulis ke typed array `Uint8ClampedArray` (misal untuk piksel tengah $(400, 537)$ pada offset byte $1.288.800$). Piksel menyala di layar.
+7. **Framebuffer**: Nilai byte warna ditulis ke typed array `Uint8ClampedArray` (misal untuk piksel tengah $(400, 537)$ pada offset byte $1.290.000$). Piksel menyala di layar.
 
 ### 1.4 Analisis Kegagalan Tahap Pipeline (Bahan Refleksi Mahasiswa)
 > *Poin Panduan*: Jika Tahap 2 (Vertex Processing / $y$-flip) dilewatkan, apa dampak visualnya? Denah lantai survei akan terbalik secara vertikal (utara menjadi selatan, tangga timur berotasi salah arah). Jika Tahap 4 (Rasterisation / sample-centre) salah mengasumsikan pusat piksel di $(0,0)$ alih-alih $(0.5, 0.5)$, garis akan mengalami pergeseran setengah piksel dan menghasilkan blur asimetris saat dipadukan dengan tekstur (insiden D3D9).
