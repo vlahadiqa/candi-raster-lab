@@ -55,7 +55,7 @@ function build(fillSilhouette) {
   }
 
   for (const pl of plan.polylines) {
-    const pts = pl.points.map(world2screen).map(([x, y]) => new THREE.Vector3(x, y, 1));
+    const pts = pl.points.map(world2screen).map(([x, y]) => new THREE.Vector3(x + 0.5, y + 0.5, 1));
     if (pl.closed) pts.push(pts[0].clone());
     const geo = new THREE.BufferGeometry().setFromPoints(pts);
     const mat = new THREE.LineBasicMaterial({ color: CATEGORY[pl.category] ?? 0xffffff });
